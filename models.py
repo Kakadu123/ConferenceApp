@@ -80,6 +80,30 @@ class ConferenceForms(messages.Message):
     """ConferenceForms -- multiple Conference outbound form message"""
     items = messages.MessageField(ConferenceForm, 1, repeated=True)
 
+# Session ndb model
+class Session(ndb.Model):
+    """Session -- Session object"""
+    name            = ndb.StringProperty(required=True)
+    highlights      = ndb.StringProperty(repeated=True)
+    speaker         = ndb.StringProperty()
+    duration        = ndb.IntegerProperty()
+    typeOfSession   = ndb.StringProperty()
+    date            = ndb.DateProperty()
+    startTime       = ndb.TimeProperty()
+    websafeConferenceKey = ndb.StringProperty()
+
+class SessionForm(messages.Message):
+    """SessionForm -- Session outbound form message"""
+    name                 = messages.StringField(1)
+    highlights           = messages.StringField(2, repeated=True)
+    speaker              = messages.StringField(3)
+    duration             = messages.IntegerField(4)
+    typeOfSession        = messages.StringField(5)
+    date                 = messages.StringField(6) #DateTimeField()
+    startTime            = messages.StringField(7)
+    websafeConferenceKey = messages.StringField(8)
+
+
 class TeeShirtSize(messages.Enum):
     """TeeShirtSize -- t-shirt size enumeration value"""
     NOT_SPECIFIED = 1
