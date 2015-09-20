@@ -87,7 +87,7 @@ class Session(ndb.Model):
     highlights      = ndb.StringProperty(repeated=True)
     speaker         = ndb.StringProperty()
     duration        = ndb.IntegerProperty()
-    typeOfSession   = ndb.StringProperty()
+    typeOfSession   = ndb.StringProperty(default='NOT_SPECIFIED')
     date            = ndb.DateProperty()
     startTime       = ndb.TimeProperty()
     websafeConferenceKey = ndb.StringProperty()
@@ -98,7 +98,7 @@ class SessionForm(messages.Message):
     highlights           = messages.StringField(2, repeated=True)
     speaker              = messages.StringField(3)
     duration             = messages.IntegerField(4)
-    typeOfSession        = messages.StringField(5)
+    typeOfSession        = messages.EnumField('SessionTypes', 5)
     date                 = messages.StringField(6) #DateTimeField()
     startTime            = messages.StringField(7)
     websafeConferenceKey = messages.StringField(8)
@@ -106,6 +106,14 @@ class SessionForm(messages.Message):
 class SessionForms(messages.Message):
     """SessionForms -- multiple Session outbound form message"""
     items = messages.MessageField(SessionForm, 1, repeated=True)
+
+class SessionTypes(messages.Enum):
+    """SessionType -- session type enumeration value"""
+    NOT_SPECIFIED = 1
+    WORKSHOP = 2
+    LECTURE = 3
+    KEYNOTE = 4
+    PRESENTATION = 5
 
 
 class TeeShirtSize(messages.Enum):

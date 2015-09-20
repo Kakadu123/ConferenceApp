@@ -12,7 +12,7 @@ created by wesc on 2014 apr 21
 
 __author__ = 'wesc+api@google.com (Wesley Chun)'
 
-
+import logging
 from datetime import datetime
 
 import endpoints
@@ -41,6 +41,7 @@ from models import TeeShirtSize
 from models import Session
 from models import SessionForm
 from models import SessionForms
+from models import SessionTypes
 
 from settings import WEB_CLIENT_ID
 from settings import ANDROID_CLIENT_ID
@@ -61,6 +62,10 @@ DEFAULTS = {
     "maxAttendees": 0,
     "seatsAvailable": 0,
     "topics": [ "Default", "Topic" ],
+}
+
+SESSION_DEFAULTS = {
+    'duration': 30,
 }
 
 OPERATORS = {
@@ -228,14 +233,25 @@ class ConferenceApi(remote.Service):
 
     def _createSessionObject(self, request):
         """Create Session object, returning SessionForm/request."""
-        # preload necessary data items
+
+        # get Conference object from request; try/catch for non-existing conference
+        try:
+            conf = ndb.Key(urlsafe=request.websafeConferenceKey).get() 
+        except:
+            raise endpoints.BadRequestException('No conference found with key: %s' % request.websafeConferenceKey)
+        
+        #  Debugging Examples
+        # logging.info("value of my var is %s", str(conf.organizerUserId))
+        # raise endpoints.BadRequestException(conf.organizerUserId)
+
+        # User data loaded
         user = endpoints.get_current_user()
         if not user:
-            raise endpoints.UnauthorizedException('Authorization required')
+            raise endpoints.UnauthorizedException('Authorization is required')
         user_id = getUserId(user)
 
         if not request.name:
-            raise endpoints.BadRequestException("Session 'name' field required")
+            raise endpoints.BadRequestException("Session 'name' field is required")
 
         # copy SessionForm/ProtoRPC Message into dict
         data = {field.name: getattr(request, field.name) for field in request.all_fields()}
@@ -245,6 +261,18 @@ class ConferenceApi(remote.Service):
 
         if data['startTime']:
             data['startTime'] = datetime.strptime(data['startTime'][:10], "%H:%M").time()
+
+        if data['typeOfSession']==None:
+            data['typeOfSession'] = 'NOT_SPECIFIED'
+        else:
+            data['typeOfSession'] = str(data['typeOfSession'])
+
+        # add default values for those missing (both data model & outbound Message)
+        for df in SESSION_DEFAULTS:
+            if data[df] in (None, []):
+                data[df] = SESSION_DEFAULTS[df]
+                setattr(request, df, SESSION_DEFAULTS[df])
+
 
         # generate Profile Key based on user ID and Conference
         # ID based on Profile key get Conference key from ID
@@ -257,12 +285,6 @@ class ConferenceApi(remote.Service):
         # create Session in db
         Session(**data).put()
         
-        """
-        taskqueue.add(params={'email': user.email(),
-            'conferenceInfo': repr(request)},
-            url='/tasks/send_confirmation_email'
-        )
-        """
         return request
 
     def _copySessionToForm(self, sess):
@@ -271,8 +293,10 @@ class ConferenceApi(remote.Service):
         for field in sf.all_fields():
             if hasattr(sess, field.name):
                 # convert Date to date string; just copy others
-                if field.name == "date":
-                    setattr(sf, field.name, str(getattr(sess, field.name)))
+                if field.name == 'typeOfSession':
+                    setattr(sf, field.name, getattr(SessionTypes, str(getattr(sess,field.name))))
+                elif field.name == "date":
+                    setattr(sf, field.name, str(getattr(sess, field.name)))   
                 else:
                     setattr(sf, field.name, getattr(sess, field.name))
             elif field.name == "websafeConferenceKey":
