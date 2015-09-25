@@ -94,7 +94,16 @@ CONF_POST_REQUEST = endpoints.ResourceContainer(
     websafeConferenceKey=messages.StringField(1),
 )
 
+SESS_SPEAKER_GET_REQUEST = endpoints.ResourceContainer(
+    message_types.VoidMessage,
+    speaker=messages.StringField(1),
+)
 
+SESS_TYPE_GET_REQUEST = endpoints.ResourceContainer(
+    message_types.VoidMessage,
+    typeOfSession=messages.StringField(1),
+    websafeConferenceKey=messages.StringField(2),
+)
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -326,6 +335,37 @@ class ConferenceApi(remote.Service):
         return SessionForms(
             items=[self._copySessionToForm(sess) for sess in sessions]
         )
+
+
+    @endpoints.method(SESS_SPEAKER_GET_REQUEST, SessionForms,
+            path='session/speaker/{speaker}',
+            http_method='GET', name='getSessionsBySpeaker')
+    def getSessionsBySpeaker(self, request):
+        """Return requested sessions (by speaker)."""
+        # query all sessions based on speaker value
+        sessions = Session.query(Session.speaker==request.speaker)
+        
+        # return set of ConferenceForm objects per Conference
+        return SessionForms(
+            items=[self._copySessionToForm(sess) for sess in sessions]
+        )
+
+    @endpoints.method(SESS_TYPE_GET_REQUEST, SessionForms,
+            path='session/{websafeConferenceKey}/SessionType/{typeOfSession}',
+            http_method='GET', name='getConferenceSessionsByType')
+    def getConferenceSessionsByType(self, request):
+        """Return requested sessions (by conference and SessionType)."""
+        conf = ndb.Key(Conference, request.websafeConferenceKey).get()
+
+        # create ancestor query for all key matches for this user
+        sessionsByConf = Session.query(ancestor=ndb.Key(Conference, request.websafeConferenceKey))
+        sessions = sessionsByConf.filter(Session.typeOfSession==request.typeOfSession)
+
+        # return set of ConferenceForm objects per Conference
+        return SessionForms(
+            items=[self._copySessionToForm(sess) for sess in sessions]
+        )
+
 
     @endpoints.method(CONF_POST_REQUEST, ConferenceForm,
             path='conference/{websafeConferenceKey}',
