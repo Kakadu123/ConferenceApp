@@ -42,6 +42,8 @@ from models import Session
 from models import SessionForm
 from models import SessionForms
 from models import SessionTypes
+from models import Response
+
 
 from settings import WEB_CLIENT_ID
 from settings import ANDROID_CLIENT_ID
@@ -585,6 +587,8 @@ class ConferenceApi(remote.Service):
     ############
     ############
 
+#############            Task 1:  createSession          #############
+
     def _createSessionObject(self, request):
         """Create Session object, returning SessionForm/request."""
 
@@ -650,6 +654,8 @@ class ConferenceApi(remote.Service):
                 if field.name == 'typeOfSession':
                     setattr(sf, field.name, getattr(SessionTypes, str(getattr(sess,field.name))))
                 elif field.name == "date":
+                    setattr(sf, field.name, str(getattr(sess, field.name)))
+                elif field.name == "startTime":
                     setattr(sf, field.name, str(getattr(sess, field.name)))   
                 else:
                     setattr(sf, field.name, getattr(sess, field.name))
@@ -664,6 +670,7 @@ class ConferenceApi(remote.Service):
         """Create new session."""
         return self._createSessionObject(request)
 
+#############            Task 1:  getConferenceSessions          #############
 
     @endpoints.method(CONF_GET_REQUEST, SessionForms,
             path='session/{websafeConferenceKey}',
@@ -681,6 +688,7 @@ class ConferenceApi(remote.Service):
             items=[self._copySessionToForm(sess) for sess in sessions]
         )
 
+#############            Task 1:  getSessionsBySpeaker          #############
 
     @endpoints.method(SESS_SPEAKER_GET_REQUEST, SessionForms,
             path='session/speaker/{speaker}',
@@ -695,6 +703,7 @@ class ConferenceApi(remote.Service):
             items=[self._copySessionToForm(sess) for sess in sessions]
         )
 
+#############          Task 1:  getConferenceSessionsByType        #############
 
     @endpoints.method(SESS_TYPE_GET_REQUEST, SessionForms,
             path='session/{websafeConferenceKey}/SessionType/{typeOfSession}',
@@ -712,6 +721,7 @@ class ConferenceApi(remote.Service):
             items=[self._copySessionToForm(sess) for sess in sessions]
         )
 
+#############           Task 2:  addSessionToWishlist          #############
 
     @ndb.transactional(xg=True)
     def _updateSessionToWishlist(self, request, reg=True):
@@ -769,6 +779,7 @@ class ConferenceApi(remote.Service):
         """Remove Session to WishList."""
         return self._updateSessionToWishlist(request, reg=False)
 
+#############           Task 2:  getSessionsInWishlist          #############
 
     @endpoints.method(message_types.VoidMessage, SessionForms,
             path='sessions/wishlist',
@@ -782,6 +793,78 @@ class ConferenceApi(remote.Service):
         # return set of SessionForm objects per Session
         return SessionForms(
             items=[self._copySessionToForm(sess) for sess in sessions]
+        )
+
+
+#############    Task 3:  Other queries that would be useful    #############
+
+    @endpoints.method(message_types.VoidMessage, SessionForm,
+            path='sessions/longestSession',
+            http_method='GET', name='getLongestSession')
+    def getLongestSession(self, request):
+        """Get the longest Session"""
+
+        # Loop over Sessions to filter the longest session
+        q = Session.query()
+        q = q.order(-Session.duration)
+        qLongest = list(q)[0]
+
+        # return SessionForm object
+        return self._copySessionToForm(qLongest)
+
+
+    @endpoints.method(message_types.VoidMessage, StringMessage,
+            path='sessions/uniqueSpeakers',
+            http_method='GET', name='getListOfUniqueSpeakers')
+    def getListOfUniqueSpeakers(self, request):
+        """Get a list of unique speakers"""
+
+        # Loop over Sessions to filter all non-workshop sessions
+        q = Session.query()
+
+        # Assign speaker values to items array
+        items = []
+        for i in q:
+            items.append(str(i.speaker))
+
+        # Assign unique values to an array
+        unique_results = []
+        unique_value_string = ""
+        for elem in items:
+            if elem not in unique_results:
+                unique_results.append(elem)
+        unique_value_string = ', ' .  join(unique_results)
+
+        # return String of comma separated speakers
+        return StringMessage(data=unique_value_string or "")
+
+
+#############    Task 3:  all non-workshop sessions before 7 pm     #############
+
+
+    @endpoints.method(message_types.VoidMessage, SessionForms,
+            path='sessions/filter',
+            http_method='GET', name='getSessionsBefore7NonWorkshop')
+    def getSessionsBefore7NonWorkshop(self, request):
+        """Get a list of all non-workshop sessions before 7 pm"""
+
+        # Loop over Sessions to filter all non-workshop sessions
+        q = Session.query()
+        q = q.filter(Session.typeOfSession!='WORKSHOP')
+
+        # Loop over filtered Sessions to append only Session 
+        # where startTime is specified and before 7pm
+        items = []
+        for i in q:
+            StrTime = str(i.startTime)
+            if StrTime != 'None':
+                StrTime = StrTime.split(":")
+                if int(StrTime[0]) < 19:
+                    items.append(i)
+
+        # return set of SessionForm objects per Items
+        return SessionForms(
+            items=[self._copySessionToForm(sess) for sess in items]
         )
 
 
