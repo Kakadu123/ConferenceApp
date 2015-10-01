@@ -29,9 +29,11 @@ Sessions in wishlist are handled as string values of session keys. Repeated valu
 * getListOfUniqueSpeakers - Get a comma separated list of unique speakers.
 
 **Indexes**
+
 To fix indexing issue, I used automatical update of indexes whenever the dev_appserver detects that a new type of query is run.
 
 **All non-workshop sessions before 7 pm**
+
 Multiple inequality filters are not allowed, so I looped over the query result in python.
 
 
