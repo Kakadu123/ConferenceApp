@@ -57,6 +57,11 @@ API_EXPLORER_CLIENT_ID = endpoints.API_EXPLORER_CLIENT_ID
 MEMCACHE_ANNOUNCEMENTS_KEY = "RECENT_ANNOUNCEMENTS"
 ANNOUNCEMENT_TPL = ('Last chance to attend! The following conferences '
                     'are nearly sold out: %s')
+MEMCACHE_SPEAKER_KEY = "SPEAKER"
+SPEAKER_ANNOUNCEMENT_TPL = ('Currently featured speaker is %s. This speaker is '
+                    'leading more than 1 session and has been recently '
+                    ' entered into the database. Do not hesitate to '
+                    'register for his/her conference')
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 DEFAULTS = {
@@ -187,6 +192,10 @@ class ConferenceApi(remote.Service):
         # create Conference, send email to organizer confirming
         # creation of Conference & return (modified) ConferenceForm
         Conference(**data).put()
+
+        logging.info("value of email is %s", str(user.email()))
+        logging.info("value of conferenceInfo is %s", repr(request))
+
         taskqueue.add(params={'email': user.email(),
             'conferenceInfo': repr(request)},
             url='/tasks/send_confirmation_email'
@@ -441,6 +450,9 @@ class ConferenceApi(remote.Service):
         """Create Announcement & assign to memcache; used by
         memcache cron job & putAnnouncement().
         """
+
+        logging.info('_cacheAnnouncement entered')
+
         confs = Conference.query(ndb.AND(
             Conference.seatsAvailable <= 5,
             Conference.seatsAvailable > 0)
@@ -466,6 +478,7 @@ class ConferenceApi(remote.Service):
             http_method='GET', name='getAnnouncement')
     def getAnnouncement(self, request):
         """Return Announcement from memcache."""
+        logging.info('getAnnouncement entered')
         return StringMessage(data=memcache.get(MEMCACHE_ANNOUNCEMENTS_KEY) or "")
 
 
@@ -636,10 +649,30 @@ class ConferenceApi(remote.Service):
         # ID based on Profile key get Conference key from ID
         p_key = ndb.Key(Conference, data['websafeConferenceKey'])
         # c_id = Session.allocate_ids(size=1, parent=p_key)[0]
-        c_id = Session.allocate_ids(size=1)[0]
-        c_key = ndb.Key(Session, c_id, parent=p_key)
-        data['key'] = c_key
+        ses_id = Session.allocate_ids(size=1)[0]
+        ses_key = ndb.Key(Session, ses_id, parent=p_key)
+        data['key'] = ses_key
        
+#############     Task 4:  Memcache Featured Speaker in a Task      #############
+
+        # When a new session is added to a conference, check the speaker.
+        # If there is more than one session by this speaker 
+        # at this conference, also add a new Memcache entry that 
+        # features the speaker and session names.
+
+        logging.info("value of sessionKey is %s", str(ses_key.urlsafe()))
+        logging.info("value of speakerName is %s", str(data['speaker']))
+        
+        taskqueue.add(
+            params={
+                'sessionKey': ses_key.urlsafe(),
+                'speakerName': data['speaker']
+                },
+            url='/tasks/verify_featuredSpeaker'
+            )
+
+#############                  Task 4:  End                   #############
+
         # create Session in db
         Session(**data).put()
         
@@ -841,7 +874,6 @@ class ConferenceApi(remote.Service):
 
 #############    Task 3:  all non-workshop sessions before 7 pm     #############
 
-
     @endpoints.method(message_types.VoidMessage, SessionForms,
             path='sessions/filter',
             http_method='GET', name='getSessionsBefore7NonWorkshop')
@@ -866,6 +898,39 @@ class ConferenceApi(remote.Service):
         return SessionForms(
             items=[self._copySessionToForm(sess) for sess in items]
         )
+
+#############            Task 4:  Add a Task              #############
+
+    @staticmethod
+    def _cacheSpeaker(self):
+        """Create Featured Speaker Announcement & assign to memcache
+        if there is more than 1 session by the most recently added speaker.
+        Otherwise leave the previous featured speaker or blank
+        """     
+        #  logging.critical('_cacheSpeaker entered')
+        speakerParam = self.request.get('speakerName')
+        
+        # Retrieve all session entities for which the most 
+        # recently added speaker is the session speaker as well 
+        q = Session.query()
+        q = q.filter(Session.speaker==speakerParam)
+        countSpeakers = 0
+        for i in q:
+            countSpeakers = countSpeakers + 1
+
+        # If there is more than 1 session by the last speaker  
+        # then rewrite the featured speaker announcement      
+        if countSpeakers > 1:
+            speakerAnnouncement = SPEAKER_ANNOUNCEMENT_TPL % str(speakerParam)
+            memcache.set(MEMCACHE_SPEAKER_KEY, speakerAnnouncement)
+
+
+    @endpoints.method(message_types.VoidMessage, StringMessage,
+            path='featuredSpeaker/get',
+            http_method='GET', name='getFeaturedSpeaker')
+    def getFeaturedSpeaker(self, request):
+        """Return Featured Speaker from memcache."""
+        return StringMessage(data=memcache.get(MEMCACHE_SPEAKER_KEY) or "")
 
 
 api = endpoints.api_server([ConferenceApi]) # register API

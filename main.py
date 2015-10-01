@@ -17,10 +17,29 @@ from google.appengine.api import app_identity
 from google.appengine.api import mail
 from conference import ConferenceApi
 
+from google.appengine.api import memcache
+from google.appengine.ext import ndb
+from models import Session
+import logging
+
 class SetAnnouncementHandler(webapp2.RequestHandler):
     def get(self):
         """Set Announcement in Memcache."""
         ConferenceApi._cacheAnnouncement()
+        self.response.set_status(204)
+
+#############     Task 4:  Memcache Featured Speaker in a Task      #############
+
+# When a new session is added to a conference, check the speaker.
+# If there is more than one session by this speaker 
+# at this conference, also add a new Memcache entry that 
+# features the speaker and session names.
+
+class VerifyFeaturedSpeakerHandler(webapp2.RequestHandler):
+    def post(self):
+        """Assign to memcache entry if a speaker has more than one session"""
+        # logging.info('VerifyFeaturedSpeakerHandler entered')
+        ConferenceApi._cacheSpeaker(self)
         self.response.set_status(204)
 
 
@@ -41,4 +60,5 @@ class SendConfirmationEmailHandler(webapp2.RequestHandler):
 app = webapp2.WSGIApplication([
     ('/crons/set_announcement', SetAnnouncementHandler),
     ('/tasks/send_confirmation_email', SendConfirmationEmailHandler),
+    ('/tasks/verify_featuredSpeaker', VerifyFeaturedSpeakerHandler),
 ], debug=True)
