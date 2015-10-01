@@ -5,6 +5,7 @@
 Sessions are child objects of Conference. There are default values for duration: 30 and TypeOfSession: NOT_SPECIFIED. TypeOfSession is an enum field. Speaker is a string field within the Session entity.
 
 **Methods**:
+
 *createSession - Create Session object.
 *getConferenceSessions - Return requested sessions (by websafeConferenceKey).
 *getSessionsBySpeaker - Return requested sessions (by speaker).
@@ -15,6 +16,7 @@ Sessions are child objects of Conference. There are default values for duration:
 Sessions in wishlist are handled as string values of session keys. Repeated values are allowed in Profile model.
 
 **Methods**:
+
 *addSessionToWishlist(SessionKey) - Add sessions to user wishlist via private method: _updateSessionToWishlist
 *delSessionFromWishlist - Add sessions to user wishlist via private method: _updateSessionToWishlist
 *getSessionsInWishlist - Get a list of sessions that user has added to wishlist.
@@ -22,6 +24,7 @@ Sessions in wishlist are handled as string values of session keys. Repeated valu
 
 ## Task 3: Work on indexes and queries
 **2 new queries**:
+
 *getLongestSession - Get the duration of the longest Session.
 *getListOfUniqueSpeakers - Get a comma separated list of unique speakers.
 
