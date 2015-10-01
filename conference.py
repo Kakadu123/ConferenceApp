@@ -595,9 +595,6 @@ class ConferenceApi(remote.Service):
     ############
     ####   ADDED
     ############
-    ############
-    ############
-    ############
 
 #############            Task 1:  createSession          #############
 
@@ -686,8 +683,6 @@ class ConferenceApi(remote.Service):
                     setattr(sf, field.name, str(getattr(sess, field.name)))   
                 else:
                     setattr(sf, field.name, getattr(sess, field.name))
-#            elif field.name == "websafeConferenceKey":
-#                setattr(sf, field.name, sess.key.urlsafe())
         sf.check_initialized()
         return sf
 
@@ -751,11 +746,6 @@ class ConferenceApi(remote.Service):
         q = Session.query(ancestor=ndb.Key(Conference, request.websafeConferenceKey))
         sessions = q.filter(Session.typeOfSession==request.typeOfSession)
  
-        # conf = ndb.Key(Conference, request.websafeConferenceKey).get()
-        # create ancestor query for all key matches for this user
-        # sessionsByConf = Session.query(ancestor=ndb.Key(Conference, request.websafeConferenceKey))
-        # sessions = sessionsByConf.filter(Session.typeOfSession==request.typeOfSession)
-
         # return set of SessionForm objects per Session
         return SessionForms(
             items=[self._copySessionToForm(sess) for sess in sessions]
