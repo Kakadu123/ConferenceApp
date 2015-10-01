@@ -17,9 +17,6 @@ from google.appengine.api import app_identity
 from google.appengine.api import mail
 from conference import ConferenceApi
 
-from google.appengine.api import memcache
-from google.appengine.ext import ndb
-from models import Session
 import logging
 
 class SetAnnouncementHandler(webapp2.RequestHandler):
