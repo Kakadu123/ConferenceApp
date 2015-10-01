@@ -6,10 +6,10 @@ Sessions are child objects of Conference. There are default values for duration:
 
 **Methods**:
 
-*createSession - Create Session object.
-*getConferenceSessions - Return requested sessions (by websafeConferenceKey).
-*getSessionsBySpeaker - Return requested sessions (by speaker).
-*getConferenceSessionsByType - Return requested sessions (by conference and SessionType). Date field is in "%Y-%m-%d" format.
+* createSession - Create Session object.
+* getConferenceSessions - Return requested sessions (by websafeConferenceKey).
+* getSessionsBySpeaker - Return requested sessions (by speaker).
+* getConferenceSessionsByType - Return requested sessions (by conference and SessionType). Date field is in "%Y-%m-%d" format.
 
 
 ## Task 2: Sessions in User Wishlist 
@@ -17,16 +17,16 @@ Sessions in wishlist are handled as string values of session keys. Repeated valu
 
 **Methods**:
 
-*addSessionToWishlist(SessionKey) - Add sessions to user wishlist via private method: _updateSessionToWishlist
-*delSessionFromWishlist - Add sessions to user wishlist via private method: _updateSessionToWishlist
-*getSessionsInWishlist - Get a list of sessions that user has added to wishlist.
+* addSessionToWishlist(SessionKey) - Add sessions to user wishlist via private method: _updateSessionToWishlist
+* delSessionFromWishlist - Add sessions to user wishlist via private method: _updateSessionToWishlist
+* getSessionsInWishlist - Get a list of sessions that user has added to wishlist.
 
 
 ## Task 3: Work on indexes and queries
 **2 new queries**:
 
-*getLongestSession - Get the duration of the longest Session.
-*getListOfUniqueSpeakers - Get a comma separated list of unique speakers.
+* getLongestSession - Get the duration of the longest Session.
+* getListOfUniqueSpeakers - Get a comma separated list of unique speakers.
 
 **Indexes**
 To fix indexing issue, I used automatical update of indexes whenever the dev_appserver detects that a new type of query is run.
