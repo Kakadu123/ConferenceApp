@@ -59,7 +59,7 @@ ANNOUNCEMENT_TPL = ('Last chance to attend! The following conferences '
                     'are nearly sold out: %s')
 MEMCACHE_SPEAKER_KEY = "SPEAKER"
 SPEAKER_ANNOUNCEMENT_TPL = ('Currently featured speaker is %s. This speaker is '
-                    'leading more than 1 session and has been most recently '
+                    'leading more than 1 session and has been recently '
                     'entered into the database. Do not hesitate to '
                     'participate on his/her sessions!')
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -114,7 +114,7 @@ SESS_TYPE_GET_REQUEST = endpoints.ResourceContainer(
 
 SESS_WISH_GET_REQUEST = endpoints.ResourceContainer(
     message_types.VoidMessage,
-    SessionKey=messages.StringField(1),
+    websafeSessionKey=messages.StringField(1),
 )
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -192,8 +192,8 @@ class ConferenceApi(remote.Service):
         # creation of Conference & return (modified) ConferenceForm
         Conference(**data).put()
 
-        logging.info("value of email is %s", str(user.email()))
-        logging.info("value of conferenceInfo is %s", repr(request))
+        #logging.info("value of email is %s", str(user.email()))
+        #logging.info("value of conferenceInfo is %s", repr(request))
 
         taskqueue.add(params={'email': user.email(),
             'conferenceInfo': repr(request)},
@@ -646,6 +646,7 @@ class ConferenceApi(remote.Service):
         ses_id = Session.allocate_ids(size=1, parent=p_key)[0]
         ses_key = ndb.Key(Session, ses_id, parent=p_key)
         data['key'] = ses_key
+        data['websafeSessionKey'] = ses_key.urlsafe()
        
 #############     Task 4:  Memcache Featured Speaker in a Task      #############
 
@@ -759,9 +760,9 @@ class ConferenceApi(remote.Service):
         retval = None
         prof = self._getProfileFromUser() # get user Profile
 
-        # check if session exists given SessionKey
+        # check if session exists given websafeSessionKey
         # get Session; check that it exists
-        wsck = request.SessionKey      
+        wsck = request.websafeSessionKey      
         try:
             sess = ndb.Key(urlsafe=wsck).get() 
         except:
@@ -795,7 +796,7 @@ class ConferenceApi(remote.Service):
 
 
     @endpoints.method(SESS_WISH_GET_REQUEST, BooleanMessage,
-            path='wishlist/add/{SessionKey}',
+            path='wishlist/add/{websafeSessionKey}',
             http_method='POST', name='addSessionToWishlist')
     def addSessionToWishlist(self, request):
         """Add Session to WishList."""
@@ -803,7 +804,7 @@ class ConferenceApi(remote.Service):
 
 
     @endpoints.method(SESS_WISH_GET_REQUEST, BooleanMessage,
-            path='wishlist/del/{SessionKey}',
+            path='wishlist/del/{websafeSessionKey}',
             http_method='DELETE', name='delSessionFromWishlist')
     def delSessionFromWishlist(self, request):
         """Remove Session to WishList."""
@@ -901,7 +902,7 @@ class ConferenceApi(remote.Service):
     @staticmethod
     def _cacheSpeaker(self):
         """Create Featured Speaker Announcement & assign to memcache
-        if there is more than 1 session by the most recently added speaker
+        if there is more than 1 session by recently added speaker
         for a given conference. Otherwise leave the previous featured
         speaker or a blank value.
         """     

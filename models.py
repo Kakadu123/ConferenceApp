@@ -85,13 +85,14 @@ class ConferenceForms(messages.Message):
 # Session ndb model
 class Session(ndb.Model):
     """Session -- Session object"""
-    name            = ndb.StringProperty(required=True)
-    highlights      = ndb.StringProperty(repeated=True)
-    speaker         = ndb.StringProperty()
-    duration        = ndb.IntegerProperty()
-    typeOfSession   = ndb.StringProperty(default='NOT_SPECIFIED')
-    date            = ndb.DateProperty()
-    startTime       = ndb.TimeProperty()
+    name              = ndb.StringProperty(required=True)
+    highlights        = ndb.StringProperty(repeated=True)
+    speaker           = ndb.StringProperty()
+    duration          = ndb.IntegerProperty()
+    typeOfSession     = ndb.StringProperty(default='NOT_SPECIFIED')
+    date              = ndb.DateProperty()
+    startTime         = ndb.TimeProperty()
+    websafeSessionKey = ndb.StringProperty()
 
 class SessionForm(messages.Message):
     """SessionForm -- Session outbound form message"""

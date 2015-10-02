@@ -2,7 +2,7 @@
 
 ## Task 1: Add Sessions to a Conference
 
-Sessions are child objects of Conference. There are default values for duration: 30 and TypeOfSession: NOT_SPECIFIED. TypeOfSession is an enum field. Speaker is a string field within the Session entity.
+Sessions are child objects of Conference. There are default values for duration: 30 and TypeOfSession: NOT_SPECIFIED. TypeOfSession is an enum field. Speaker is a string field within the Session entity. There is additional field websafeSessionKey as urlsafe Session key is required in multiple methods. I followed the suggestion from Jeff suggested on forum: https://discussions.udacity.com/t/how-to-find-entity-keys-in-developers-console/28207/4 
 
 **Methods**:
 
