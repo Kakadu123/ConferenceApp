@@ -25,7 +25,7 @@ Sessions in wishlist are handled as string values of session keys. Repeated valu
 ## Task 3: Work on indexes and queries
 **2 new queries**:
 
-* getLongestSession - Get the duration of the longest Session.
+* getLongestSession - Get the session with the longest duration.
 * getListOfUniqueSpeakers - Get a comma separated list of unique speakers.
 
 **Indexes**

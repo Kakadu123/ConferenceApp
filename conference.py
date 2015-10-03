@@ -630,7 +630,7 @@ class ConferenceApi(remote.Service):
             data['startTime'] = datetime.strptime(data['startTime'][:10], "%H:%M").time()
 
         # add default value for typeOfSession
-        if data['typeOfSession']==None:
+        if data['typeOfSession'] == None:
             data['typeOfSession'] = 'NOT_SPECIFIED'
         else:
             data['typeOfSession'] = str(data['typeOfSession'])
@@ -722,7 +722,7 @@ class ConferenceApi(remote.Service):
     def getSessionsBySpeaker(self, request):
         """Return requested sessions (by speaker)."""
         # query all sessions based on speaker value
-        sessions = Session.query(Session.speaker==request.speaker)
+        sessions = Session.query(Session.speaker == request.speaker)
         
         # return set of SessionForm objects per Conference
         return SessionForms(
@@ -745,7 +745,7 @@ class ConferenceApi(remote.Service):
         
         # create ancestor query for all key matches for this user
         q = Session.query(ancestor=ndb.Key(Conference, request.websafeConferenceKey))
-        sessions = q.filter(Session.typeOfSession==request.typeOfSession)
+        sessions = q.filter(Session.typeOfSession == request.typeOfSession)
  
         # return set of SessionForm objects per Session
         return SessionForms(
@@ -762,30 +762,30 @@ class ConferenceApi(remote.Service):
 
         # check if session exists given websafeSessionKey
         # get Session; check that it exists
-        wsck = request.websafeSessionKey      
+        ses_key = request.websafeSessionKey      
         try:
-            sess = ndb.Key(urlsafe=wsck).get() 
+            sess = ndb.Key(urlsafe=ses_key).get() 
         except:
             raise endpoints.BadRequestException('No session found with key: %s' % wsck)
         
         # Add to WishList
         if reg:
             # check if user already added session to Wishlist otherwise add
-            if wsck in prof.SessionsInWishlist:
+            if ses_key in prof.SessionsInWishlist:
                 raise ConflictException(
                     "You have already added this Session to WishList")
 
             # Add to WishList
-            prof.SessionsInWishlist.append(wsck)
+            prof.SessionsInWishlist.append(ses_key)
             retval = True
 
         # Remove from WishList
         else:
             # check if user already added session to Wishlist
-            if wsck in prof.SessionsInWishlist:
+            if ses_key in prof.SessionsInWishlist:
 
                 # Remove from WishList
-                prof.SessionsInWishlist.remove(wsck)
+                prof.SessionsInWishlist.remove(ses_key)
                 retval = True
             else:
                 retval = False
@@ -833,12 +833,11 @@ class ConferenceApi(remote.Service):
             path='sessions/longestSession',
             http_method='GET', name='getLongestSession')
     def getLongestSession(self, request):
-        """Get the duration of the longest Session"""
+        """Get the session with the longest duration"""
 
-        # Loop over Sessions to filter the longest session
-        q = Session.query()
-        q = q.order(-Session.duration)
-        qLongest = list(q)[0]
+        # Query sessions, Order by duration in descending orderSession, 
+        # Retrieve the first entity
+        qLongest = Session.query().order(-Session.duration).get()
 
         # return SessionForm object
         return self._copySessionToForm(qLongest)
@@ -850,7 +849,7 @@ class ConferenceApi(remote.Service):
     def getListOfUniqueSpeakers(self, request):
         """Get a comma separated list of unique speakers"""
 
-        # Loop over Sessions to filter all non-workshop sessions
+        # Retrieve sessions
         q = Session.query()
 
         # Assign speaker values to items array
@@ -858,12 +857,8 @@ class ConferenceApi(remote.Service):
         for i in q:
             items.append(str(i.speaker))
 
-        # Assign unique values to an array
-        unique_results = []
-        unique_value_string = ""
-        for elem in items:
-            if elem not in unique_results:
-                unique_results.append(elem)
+        # Assign values to a set and generate string
+        unique_results = set(items)    
         unique_value_string = ', ' .  join(unique_results)
 
         # return String of comma separated speakers
@@ -878,7 +873,7 @@ class ConferenceApi(remote.Service):
     def getSessionsBefore7NonWorkshop(self, request):
         """Get a list of all non-workshop sessions before 7 pm"""
 
-        # Loop over Sessions to filter all non-workshop sessions
+        # Retrieve all non-workshop sessions
         q = Session.query()
         q = q.filter(Session.typeOfSession!='WORKSHOP')
 
@@ -919,13 +914,11 @@ class ConferenceApi(remote.Service):
         # create ancestor query for all session entities of the given conference
         q = Session.query(ancestor=ndb.Key(Conference, confParam))
  
-        # retrieve all sessions where the speaker has more than 1 session
-        # in that conference 
-        q = q.filter(Session.speaker==speakerParam)
-        countSpeakers = 0
-        for i in q:
-            countSpeakers = countSpeakers + 1
-
+        # retrieve the count of all sessions where the speaker 
+        # has more than 1 session in that conference and 
+        q = q.filter(Session.speaker == speakerParam)
+        countSpeakers = q.count()
+        
         # If there is more than 1 session by the last speaker  
         # then rewrite the featured speaker announcement
         # Otherwise leave the previous featured speaker or blank     
