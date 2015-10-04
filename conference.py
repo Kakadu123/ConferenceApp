@@ -773,7 +773,7 @@ class ConferenceApi(remote.Service):
         try:
             sess = ndb.Key(urlsafe=ses_key).get() 
         except:
-            raise endpoints.BadRequestException('No session found with key: %s' % wsck)
+            raise endpoints.BadRequestException('No session found with key: %s' % ses_key)
         
         # Add to WishList
         if reg:
