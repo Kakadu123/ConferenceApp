@@ -617,6 +617,11 @@ class ConferenceApi(remote.Service):
             raise endpoints.UnauthorizedException('Authorization is required')
         user_id = getUserId(user)
 
+        # check to make sure that the creator of the Session is also 
+        # the organizer of the Conference
+        if user_id != conf.organizerUserId:
+            raise endpoints.UnauthorizedException('Only the organizer of the Conference is authorized to create session')
+
         if not request.name:
             raise endpoints.BadRequestException("Session 'name' field is required")
 
@@ -885,8 +890,7 @@ class ConferenceApi(remote.Service):
         for i in q:
             StrTime = str(i.startTime)
             if StrTime != 'None':
-                StrTime = StrTime.split(":")
-                if int(StrTime[0]) < 19:
+                if int(i.startTime.hour) < 19:
                     items.append(i)
 
         # return set of SessionForm objects per Items
