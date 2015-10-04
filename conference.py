@@ -642,11 +642,11 @@ class ConferenceApi(remote.Service):
                 setattr(request, df, SESSION_DEFAULTS[df])
 
         # generate Session Key based on Conference Key
-        p_key = ndb.Key(Conference, data['websafeConferenceKey'])
+        p_key = ndb.Key(urlsafe=request.websafeConferenceKey)
         ses_id = Session.allocate_ids(size=1, parent=p_key)[0]
         ses_key = ndb.Key(Session, ses_id, parent=p_key)
         data['key'] = ses_key
-        data['websafeSessionKey'] = ses_key.urlsafe()
+
        
 #############     Task 4:  Memcache Featured Speaker in a Task      #############
 
@@ -666,9 +666,11 @@ class ConferenceApi(remote.Service):
 #############                  Task 4:  End                   #############
 
         del data['websafeConferenceKey']
-        # create Session in db
+        # Create Session in db
         Session(**data).put()
-        return request
+        # Return Session Entity
+        return self._copySessionToForm(Session(**data))
+
 
     def _copySessionToForm(self, sess):
         """Copy relevant fields from Session to SessionForm."""
@@ -707,7 +709,7 @@ class ConferenceApi(remote.Service):
             raise endpoints.BadRequestException('No conference found with key: %s' % request.websafeConferenceKey)
         
         # create ancestor query for all key matches for this user
-        sessions = Session.query(ancestor=ndb.Key(Conference, request.websafeConferenceKey))
+        sessions = Session.query(ancestor=ndb.Key(urlsafe=request.websafeConferenceKey))
         
         # return set of ConferenceForm objects per Conference
         return SessionForms(
@@ -744,7 +746,7 @@ class ConferenceApi(remote.Service):
             raise endpoints.BadRequestException('No conference found with key: %s' % request.websafeConferenceKey)
         
         # create ancestor query for all key matches for this user
-        q = Session.query(ancestor=ndb.Key(Conference, request.websafeConferenceKey))
+        q = Session.query(ancestor=ndb.Key(urlsafe=request.websafeConferenceKey))
         sessions = q.filter(Session.typeOfSession == request.typeOfSession)
  
         # return set of SessionForm objects per Session
@@ -818,7 +820,7 @@ class ConferenceApi(remote.Service):
     def getSessionsInWishlist(self, request):
         """Get a list of sessions that user has added to wishlist."""
         prof = self._getProfileFromUser() # get user Profile
-        sess_keys = [ndb.Key(urlsafe=wsck) for wsck in prof.SessionsInWishlist]
+        sess_keys = [ndb.Key(urlsafe=ses) for ses in prof.SessionsInWishlist]
         sessions = ndb.get_multi(sess_keys)
 
         # return set of SessionForm objects per Session
@@ -839,7 +841,7 @@ class ConferenceApi(remote.Service):
         # Retrieve the first entity
         qLongest = Session.query().order(-Session.duration).get()
 
-        # return SessionForm object
+        # Return SessionForm object
         return self._copySessionToForm(qLongest)
 
 
@@ -912,7 +914,7 @@ class ConferenceApi(remote.Service):
             raise endpoints.BadRequestException('No conference found with key: %s' % request.websafeConferenceKey)
         
         # create ancestor query for all session entities of the given conference
-        q = Session.query(ancestor=ndb.Key(Conference, confParam))
+        q = Session.query(ancestor=ndb.Key(urlsafe=confParam))
  
         # retrieve the count of all sessions where the speaker 
         # has more than 1 session in that conference and 

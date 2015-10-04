@@ -34,7 +34,7 @@ To fix indexing issue, I used automatical update of indexes whenever the dev_app
 
 **All non-workshop sessions before 7 pm**
 
-Multiple inequality filters are not allowed, so I looped over the query result in python.
+There are query restrictions in GAE due to the fact that performance of queries does not depend on the amount of data stored but the actual size of the result set. This involves restriction on inequality filters. Inequality filter can be applied to at most one property and the requirement for Task 3 requires inequality filter for 2 different properties. Due to this limitation I itirated over the filtered result set (non-workshop entities) to retrieve only those entities that start before 7pm.
 
 
 ## Task 4: Featured speaker
